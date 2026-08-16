@@ -1,15 +1,15 @@
-# Development Phases — SoundFlow
+# Development Phases — Noir
 
 > **Last Updated**: 2026-08-16
-> **Current Phase**: Phase 1 — Project Setup ⬅️
+> **Current Phase**: Phase 2 — Audio Engine ⬅️
 
 ---
 
 ## Phase Overview
 
 ```
-Phase 1: Project Setup          ██░░░░░░░░  NOT STARTED
-Phase 2: Audio Engine           ░░░░░░░░░░  NOT STARTED
+Phase 1: Project Setup          ██████████  COMPLETED ✅
+Phase 2: Audio Engine           ██░░░░░░░░  CURRENT ⬅️
 Phase 3: User Interface         ░░░░░░░░░░  NOT STARTED
 Phase 4: Profile System         ░░░░░░░░░░  NOT STARTED
 Phase 5: System Integration     ░░░░░░░░░░  NOT STARTED
@@ -18,7 +18,7 @@ Phase 6: Polish & Packaging     ░░░░░░░░░░  NOT STARTED
 
 ---
 
-## Phase 1: Project Setup ⬅️ CURRENT
+## Phase 1: Project Setup ✅ COMPLETED
 
 ### Objective
 Set up the Electron project skeleton, install dependencies, configure build tooling, and establish the development workflow.
@@ -33,33 +33,39 @@ Set up the Electron project skeleton, install dependencies, configure build tool
 - Create `.gitignore` and basic project config
 
 ### Dependencies
-- Node.js (v18+) installed on system
-- npm installed
+- Node.js (v18+) installed on system (v22.13.1)
+- npm installed (10.9.2)
 
 ### Definition of Done
-- [ ] `npm install` runs without errors
-- [ ] `npm run dev` launches an Electron window
-- [ ] Window displays a basic "SoundFlow" placeholder UI
-- [ ] Project structure matches architecture document
-- [ ] All development scripts work (dev, lint, build)
+- [x] `npm install` runs without errors
+- [x] `npm run dev` launches an Electron window
+- [x] Window displays a basic "Noir" placeholder UI
+- [x] Project structure matches architecture document
+- [x] All development scripts work (dev, lint, build)
 
 ### Verification Criteria
-- Electron app launches successfully
-- Main process and renderer process communicate via IPC
-- No console errors on startup
-- Window renders correctly with basic content
+- [x] Electron app launches successfully
+- [x] Main process and renderer process communicate via IPC
+- [x] No console errors on startup
+- [x] Window renders correctly with dark glassmorphism theme and interactive components
 
 ### Current Status
-🔴 **Not Started**
+🟢 **Completed (2026-08-16)**
 
 ### Completed Work
-_(none)_
+- Initialized `package.json` with Electron 28, electron-builder, and ESLint
+- Built `src/main.js` with custom frameless window and mock IPC handlers
+- Built `src/preload.js` with secure contextBridge API mapping
+- Built full CSS design system (`src/renderer/styles/main.css`, `components.css`)
+- Built UI controller with visualizer and notifications (`src/renderer/js/`)
+- Set up empty directory structure and `.gitkeep` for subsequent phases
+- Passed `npm run lint` with zero warnings/errors
 
 ### Remaining Work
-- Everything listed in Features/Components above
+- None for Phase 1
 
 ### Known Blockers
-- Need to verify Node.js is installed on the user's system
+- None
 
 ---
 

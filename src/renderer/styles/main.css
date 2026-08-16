@@ -1,0 +1,174 @@
+/* ==========================================================================
+   Noir Design System — Main Styles & Tokens
+   Ref: docs/visuals.md
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Background layers */
+  --bg-base:          #0a0a0f;        /* Deep Obsidian base */
+  --bg-surface:       #12121c;        /* Card background */
+  --bg-surface-hover: #191928;        /* Card hover state */
+  --bg-elevated:      #1e1e30;        /* Dropdowns, modals */
+  --bg-overlay:       rgba(0, 0, 0, 0.7);
+
+  /* Primary Accent — Ultraviolet / Neon Violet */
+  --accent-primary:   #8b5cf6;
+  --accent-secondary: #a855f7;
+  --accent-tertiary:  #6366f1;
+  --accent-gradient:  linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #6366f1 100%);
+  --accent-glow:      rgba(139, 92, 246, 0.35);
+  --accent-glow-strong: rgba(139, 92, 246, 0.6);
+
+  /* Audio visualizer levels */
+  --viz-low:          #10b981;        /* Emerald green */
+  --viz-mid:          #f59e0b;        /* Amber */
+  --viz-high:         #ef4444;        /* Crimson */
+  --viz-gradient:     linear-gradient(90deg, #10b981 0%, #f59e0b 65%, #ef4444 100%);
+
+  /* Text & Typography */
+  --font-primary:     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:        'JetBrains Mono', Consolas, monospace;
+  
+  --text-primary:     #f8fafc;
+  --text-secondary:   #94a3b8;
+  --text-muted:       #64748b;
+  --text-disabled:    #475569;
+  --text-accent:      #c084fc;
+
+  /* Borders */
+  --border-subtle:    rgba(255, 255, 255, 0.05);
+  --border-medium:    rgba(255, 255, 255, 0.10);
+  --border-accent:    rgba(139, 92, 246, 0.45);
+  --border-accent-strong: rgba(168, 85, 247, 0.8);
+
+  /* Status */
+  --status-active:    #10b981;
+  --status-inactive:  #64748b;
+  --status-warning:   #f59e0b;
+  --status-error:     #ef4444;
+
+  /* Glassmorphism */
+  --glass-bg:         rgba(18, 18, 28, 0.65);
+  --glass-bg-hover:   rgba(25, 25, 40, 0.8);
+  --glass-border:     rgba(255, 255, 255, 0.08);
+  --glass-blur:       16px;
+
+  /* Shadows */
+  --shadow-sm:        0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md:        0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg:        0 10px 30px rgba(0, 0, 0, 0.6);
+  --shadow-glow:      0 0 20px var(--accent-glow), 0 0 40px rgba(124, 58, 237, 0.15);
+
+  /* Radius */
+  --radius-sm:        6px;
+  --radius-md:        10px;
+  --radius-lg:        14px;
+  --radius-xl:        20px;
+  --radius-full:      9999px;
+
+  /* Spacing */
+  --space-xs:         4px;
+  --space-sm:         8px;
+  --space-md:         12px;
+  --space-lg:         16px;
+  --space-xl:         20px;
+  --space-2xl:        28px;
+
+  /* Transitions */
+  --ease-out:         cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring:      cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-bounce:      cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-fast:  150ms var(--ease-out);
+  --transition-normal: 250ms var(--ease-out);
+}
+
+/* Base Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.4);
+}
+
+/* App Container */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: radial-gradient(circle at top right, rgba(124, 58, 237, 0.08), transparent 45%),
+              radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.06), transparent 40%),
+              var(--bg-base);
+}
+
+/* Section Header Typography */
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.section-title .badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--text-accent);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  font-family: var(--font-mono);
+}
+
+/* Focus and Reduced Motion */
+:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
