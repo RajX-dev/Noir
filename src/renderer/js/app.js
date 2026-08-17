@@ -55,12 +55,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  function getAppIcon(name) {
-    const lower = name.toLowerCase();
-    if (lower.includes('spotify')) return '🟢';
-    if (lower.includes('valorant') || lower.includes('game')) return '🎯';
-    if (lower.includes('chrome') || lower.includes('browser')) return '🌐';
-    if (lower.includes('discord')) return '💬';
+  function getAppIcon(name = '', processName = '') {
+    const combined = `${name} ${processName}`.toLowerCase();
+    if (combined.includes('spotify')) return '🟢';
+    if (combined.includes('call of duty') || combined.includes('cod') || combined.includes('valorant') || combined.includes('steam')) return '🎯';
+    if (combined.includes('zen') || combined.includes('chrome') || combined.includes('edge') || combined.includes('firefox') || combined.includes('brave')) return '🌐';
+    if (combined.includes('discord')) return '💬';
+    if (combined.includes('antigravity') || combined.includes('code') || combined.includes('devenv')) return '⚡';
+    if (combined.includes('vlc') || combined.includes('media') || combined.includes('netflix') || combined.includes('prime')) return '🎬';
     return '🎵';
   }
 
@@ -128,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div style="text-align: center; padding: 40px var(--space-md); color: var(--text-muted);">
           <div style="font-size: 32px; margin-bottom: 8px;">🎵</div>
           <div style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">No Active Audio Sessions</div>
-          <div style="font-size: 11px; margin-top: 4px;">Play music or launch a game to route audio</div>
+          <div style="font-size: 11px; margin-top: 4px;">Play music or launch an app to route audio</div>
         </div>
       `;
       return;
@@ -139,13 +141,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       card.className = 'app-card';
       card.id = `session-${session.id}`;
 
-      const currentDev = devices.find((d) => d.id === session.deviceId) || devices[0];
+      const currentDev = devices.find((d) => d.id === session.deviceId) || devices.find((d) => d.isDefault) || devices[0] || { name: 'Default Device', type: 'speakers' };
       const volPercent = Math.round(session.volume * 100);
 
       card.innerHTML = `
         <div class="app-card-top">
           <div class="app-meta">
-            <div class="app-icon">${getAppIcon(session.displayName)}</div>
+            <div class="app-icon">${getAppIcon(session.displayName, session.processName)}</div>
             <div class="app-details">
               <span class="app-name">${session.displayName}</span>
               <span class="app-process">${session.processName}</span>
@@ -217,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               await window.electronAPI.routeSession(session.id, targetDevId);
             }
             const targetDev = devices.find((d) => d.id === targetDevId);
-            if (window.Toast) {
+            if (window.Toast && targetDev) {
               window.Toast.show(`Routed ${session.displayName} → ${targetDev.displayName || targetDev.name}`, 'success');
             }
             renderAll();
@@ -252,7 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         session.isMuted = !session.isMuted;
         muteBtn.classList.toggle('muted', session.isMuted);
         muteBtn.innerHTML = session.isMuted ? '🔇' : '🔊';
-        
+
         slider.value = session.isMuted ? 0 : Math.round(session.volume * 100);
         volText.textContent = session.isMuted ? '0%' : `${Math.round(session.volume * 100)}%`;
 
@@ -337,6 +339,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     renderProfiles();
   });
+
+  // Push Event Listeners from DeviceMonitor
+  if (window.electronAPI) {
+    window.electronAPI.onDevicesChanged((updatedDevices) => {
+      devices = updatedDevices;
+      renderDevices();
+    });
+
+    window.electronAPI.onSessionsChanged((updatedSessions) => {
+      sessions = updatedSessions;
+      renderApps();
+      renderDevices();
+    });
+  }
 
   // Start initialization
   await loadData();

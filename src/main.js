@@ -1,86 +1,11 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const audioManager = require('./audio/audioManager');
+const deviceMonitor = require('./audio/deviceMonitor');
 
 let mainWindow = null;
 
-// Mock data for Phase 1 UI Demonstration
-const mockDevices = [
-  {
-    id: 'dev-1',
-    name: 'Realtek High Definition Audio',
-    displayName: 'Laptop Speakers',
-    type: 'speakers',
-    isDefault: true,
-    isActive: true,
-    appCount: 2
-  },
-  {
-    id: 'dev-2',
-    name: 'Sony WH-1000XM5 (Stereo)',
-    displayName: 'Sony Headphones',
-    type: 'headphones',
-    isDefault: false,
-    isActive: true,
-    appCount: 1
-  },
-  {
-    id: 'dev-3',
-    name: 'JBL Flip 6 Bluetooth',
-    displayName: 'JBL Bluetooth Speaker',
-    type: 'bluetooth',
-    isDefault: false,
-    isActive: true,
-    appCount: 1
-  }
-];
-
-let mockSessions = [
-  {
-    id: 'ses-1',
-    processId: 10420,
-    processName: 'Spotify.exe',
-    displayName: 'Spotify',
-    iconName: 'spotify',
-    volume: 0.72,
-    isMuted: false,
-    peakLevel: 0.65,
-    deviceId: 'dev-3'
-  },
-  {
-    id: 'ses-2',
-    processId: 14890,
-    processName: 'VALORANT.exe',
-    displayName: 'VALORANT',
-    iconName: 'gamepad',
-    volume: 0.95,
-    isMuted: false,
-    peakLevel: 0.88,
-    deviceId: 'dev-2'
-  },
-  {
-    id: 'ses-3',
-    processId: 8320,
-    processName: 'chrome.exe',
-    displayName: 'Google Chrome',
-    iconName: 'chrome',
-    volume: 0.35,
-    isMuted: false,
-    peakLevel: 0.25,
-    deviceId: 'dev-1'
-  },
-  {
-    id: 'ses-4',
-    processId: 6512,
-    processName: 'Discord.exe',
-    displayName: 'Discord',
-    iconName: 'discord',
-    volume: 0.80,
-    isMuted: false,
-    peakLevel: 0.40,
-    deviceId: 'dev-2'
-  }
-];
-
+// Mock profiles for now (Phase 4 will build persistent profiles)
 let mockProfiles = [
   {
     id: 'prof-1',
@@ -88,12 +13,7 @@ let mockProfiles = [
     icon: '🎮',
     isActive: true,
     isDefault: true,
-    mappings: [
-      { processName: 'VALORANT.exe', deviceId: 'dev-2', volume: 0.95, isMuted: false },
-      { processName: 'Discord.exe', deviceId: 'dev-2', volume: 0.80, isMuted: false },
-      { processName: 'Spotify.exe', deviceId: 'dev-3', volume: 0.60, isMuted: false },
-      { processName: 'chrome.exe', deviceId: 'dev-1', volume: 0.20, isMuted: false }
-    ]
+    mappings: []
   },
   {
     id: 'prof-2',
@@ -101,10 +21,7 @@ let mockProfiles = [
     icon: '🎵',
     isActive: false,
     isDefault: true,
-    mappings: [
-      { processName: 'Spotify.exe', deviceId: 'dev-2', volume: 0.85, isMuted: false },
-      { processName: 'Discord.exe', deviceId: 'dev-1', volume: 0.30, isMuted: true }
-    ]
+    mappings: []
   },
   {
     id: 'prof-3',
@@ -112,20 +29,7 @@ let mockProfiles = [
     icon: '💼',
     isActive: false,
     isDefault: true,
-    mappings: [
-      { processName: 'Discord.exe', deviceId: 'dev-2', volume: 0.90, isMuted: false },
-      { processName: 'Spotify.exe', deviceId: 'dev-1', volume: 0.15, isMuted: false }
-    ]
-  },
-  {
-    id: 'prof-4',
-    name: 'Cinema',
-    icon: '🎬',
-    isActive: false,
-    isDefault: false,
-    mappings: [
-      { processName: 'chrome.exe', deviceId: 'dev-1', volume: 0.90, isMuted: false }
-    ]
+    mappings: []
   }
 ];
 
@@ -147,7 +51,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: false
     }
   });
 
@@ -155,9 +59,11 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    deviceMonitor.start(1500);
   });
 
   mainWindow.on('closed', () => {
+    deviceMonitor.stop();
     mainWindow = null;
   });
 }
@@ -181,42 +87,33 @@ ipcMain.handle('window-close', () => {
   if (mainWindow) mainWindow.close();
 });
 
-// Audio & Profile IPC handlers (Mock Phase 1)
+// Real Audio Engine IPC Handlers
 ipcMain.handle('get-devices', async () => {
-  return mockDevices;
+  return audioManager.getOutputDevices();
 });
 
 ipcMain.handle('get-sessions', async () => {
-  return mockSessions;
+  return audioManager.getAudioSessions();
 });
 
 ipcMain.handle('route-session', async (event, { sessionId, deviceId }) => {
-  const session = mockSessions.find((s) => s.id === sessionId);
-  if (session) {
-    session.deviceId = deviceId;
-    return { success: true, session };
-  }
-  return { success: false, error: 'Session not found' };
+  const success = await audioManager.routeSession(sessionId, deviceId);
+  const sessions = await audioManager.getAudioSessions();
+  const session = sessions.find((s) => s.id === sessionId);
+  return { success, session };
 });
 
 ipcMain.handle('set-volume', async (event, { sessionId, volume }) => {
-  const session = mockSessions.find((s) => s.id === sessionId);
-  if (session) {
-    session.volume = Math.max(0, Math.min(1, volume));
-    return { success: true, session };
-  }
-  return { success: false, error: 'Session not found' };
+  const success = await audioManager.setSessionVolume(sessionId, volume);
+  return { success };
 });
 
 ipcMain.handle('mute-session', async (event, { sessionId, isMuted }) => {
-  const session = mockSessions.find((s) => s.id === sessionId);
-  if (session) {
-    session.isMuted = typeof isMuted === 'boolean' ? isMuted : !session.isMuted;
-    return { success: true, session };
-  }
-  return { success: false, error: 'Session not found' };
+  const success = await audioManager.muteSession(sessionId, isMuted);
+  return { success };
 });
 
+// Profile IPC Handlers (Phase 4 mock/in-memory)
 ipcMain.handle('get-profiles', async () => {
   return mockProfiles;
 });
@@ -226,27 +123,19 @@ ipcMain.handle('apply-profile', async (event, profileId) => {
     p.isActive = p.id === profileId;
   });
   const activeProfile = mockProfiles.find((p) => p.id === profileId);
-  if (activeProfile && activeProfile.mappings) {
-    activeProfile.mappings.forEach((m) => {
-      const session = mockSessions.find((s) => s.processName === m.processName);
-      if (session) {
-        session.deviceId = m.deviceId;
-        session.volume = m.volume;
-        session.isMuted = m.isMuted;
-      }
-    });
-  }
-  return { success: true, profile: activeProfile, sessions: mockSessions };
+  const sessions = await audioManager.getAudioSessions();
+  return { success: true, profile: activeProfile, sessions };
 });
 
 ipcMain.handle('save-profile', async (event, newProfile) => {
+  const sessions = await audioManager.getAudioSessions();
   const profile = {
     id: `prof-${Date.now()}`,
     name: newProfile.name || 'Custom Profile',
     icon: newProfile.icon || '🎛️',
     isActive: true,
     isDefault: false,
-    mappings: mockSessions.map((s) => ({
+    mappings: sessions.map((s) => ({
       processName: s.processName,
       deviceId: s.deviceId,
       volume: s.volume,
@@ -263,6 +152,19 @@ ipcMain.handle('save-profile', async (event, newProfile) => {
 ipcMain.handle('delete-profile', async (event, profileId) => {
   mockProfiles = mockProfiles.filter((p) => p.id !== profileId);
   return { success: true, profiles: mockProfiles };
+});
+
+// Device and Session Change Notifications
+deviceMonitor.on('devices-changed', (devices) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('devices-changed', devices);
+  }
+});
+
+deviceMonitor.on('sessions-changed', (sessions) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('sessions-changed', sessions);
+  }
 });
 
 // App Lifecycle

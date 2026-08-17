@@ -20,7 +20,9 @@
   ],
   "author": "RajX-dev",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "native-sound-mixer": "^3.4.6-win"
+  },
   "devDependencies": {
     "electron": "^28.2.0",
     "electron-builder": "^24.9.1",
