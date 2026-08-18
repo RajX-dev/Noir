@@ -3,35 +3,9 @@ const path = require('path');
 const audioManager = require('./audio/audioManager');
 const deviceMonitor = require('./audio/deviceMonitor');
 
-let mainWindow = null;
+const profileManager = require('./profiles/profileManager');
 
-// Mock profiles for now (Phase 4 will build persistent profiles)
-let mockProfiles = [
-  {
-    id: 'prof-1',
-    name: 'Gaming',
-    icon: '🎮',
-    isActive: true,
-    isDefault: true,
-    mappings: []
-  },
-  {
-    id: 'prof-2',
-    name: 'Music & Focus',
-    icon: '🎵',
-    isActive: false,
-    isDefault: true,
-    mappings: []
-  },
-  {
-    id: 'prof-3',
-    name: 'Work / Meetings',
-    icon: '💼',
-    isActive: false,
-    isDefault: true,
-    mappings: []
-  }
-];
+let mainWindow = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -113,45 +87,27 @@ ipcMain.handle('mute-session', async (event, { sessionId, isMuted }) => {
   return { success };
 });
 
-// Profile IPC Handlers (Phase 4 mock/in-memory)
+// Profile IPC Handlers (Phase 4 Persistent Profile Engine)
 ipcMain.handle('get-profiles', async () => {
-  return mockProfiles;
+  return profileManager.getProfiles();
 });
 
 ipcMain.handle('apply-profile', async (event, profileId) => {
-  mockProfiles.forEach((p) => {
-    p.isActive = p.id === profileId;
-  });
-  const activeProfile = mockProfiles.find((p) => p.id === profileId);
-  const sessions = await audioManager.getAudioSessions();
-  return { success: true, profile: activeProfile, sessions };
+  return profileManager.applyProfile(profileId, audioManager);
 });
 
 ipcMain.handle('save-profile', async (event, newProfile) => {
   const sessions = await audioManager.getAudioSessions();
-  const profile = {
-    id: `prof-${Date.now()}`,
-    name: newProfile.name || 'Custom Profile',
-    icon: newProfile.icon || '🎛️',
-    isActive: true,
-    isDefault: false,
-    mappings: sessions.map((s) => ({
-      processName: s.processName,
-      deviceId: s.deviceId,
-      volume: s.volume,
-      isMuted: s.isMuted
-    }))
-  };
-  mockProfiles.forEach((p) => {
-    p.isActive = false;
+  const res = await profileManager.saveProfile({
+    name: newProfile.name,
+    icon: newProfile.icon,
+    sessions
   });
-  mockProfiles.push(profile);
-  return { success: true, profile, profiles: mockProfiles };
+  return { success: true, profile: res.profile, profiles: res.profiles };
 });
 
 ipcMain.handle('delete-profile', async (event, profileId) => {
-  mockProfiles = mockProfiles.filter((p) => p.id !== profileId);
-  return { success: true, profiles: mockProfiles };
+  return profileManager.deleteProfile(profileId);
 });
 
 // Device and Session Change Notifications

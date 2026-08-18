@@ -85,10 +85,28 @@
         <div class="modal-input-group">
           <label class="modal-label" for="profile-name-input">Profile Name</label>
           <input type="text" id="profile-name-input" class="modal-input" placeholder="e.g. Late Night Beats" maxlength="24">
+          <div class="modal-chips-row" id="name-chips">
+            <span class="modal-chip" data-name="Gaming Mode">🎮 Gaming</span>
+            <span class="modal-chip" data-name="Deep Focus">🎵 Focus</span>
+            <span class="modal-chip" data-name="Zoom & Meet">💼 Meeting</span>
+            <span class="modal-chip" data-name="Night Session">🌙 Night</span>
+          </div>
         </div>
         <div class="modal-input-group">
           <label class="modal-label" for="profile-icon-input">Icon Emoji</label>
-          <input type="text" id="profile-icon-input" class="modal-input" placeholder="🎧" maxlength="2" value="🎧">
+          <div class="icon-input-row">
+            <input type="text" id="profile-icon-input" class="modal-input icon-input" placeholder="🎧" maxlength="2" value="🎧">
+            <div class="modal-emoji-picker">
+              <span class="emoji-opt">🎮</span>
+              <span class="emoji-opt">🎵</span>
+              <span class="emoji-opt">💼</span>
+              <span class="emoji-opt">🎬</span>
+              <span class="emoji-opt">🎧</span>
+              <span class="emoji-opt">🎙️</span>
+              <span class="emoji-opt">🔊</span>
+              <span class="emoji-opt">⚡</span>
+            </div>
+          </div>
         </div>
         <div class="modal-actions">
           <button class="btn btn-secondary" id="modal-cancel">Cancel</button>

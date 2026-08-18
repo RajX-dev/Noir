@@ -518,13 +518,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     profilesRow.innerHTML = '';
 
     profiles.forEach((prof) => {
-      const pill = document.createElement('button');
+      const pill = document.createElement('div');
       pill.className = `profile-pill ${prof.isActive ? 'active' : ''}`;
       pill.id = `profile-${prof.id}`;
       pill.setAttribute('tabindex', '0');
-      pill.innerHTML = `<span>${prof.icon || '🎛️'}</span> <span>${prof.name}</span>`;
+      pill.setAttribute('role', 'button');
 
-      pill.addEventListener('click', async () => {
+      const isCustom = !prof.isDefault;
+
+      pill.innerHTML = `
+        <span>${prof.icon || '🎛️'}</span>
+        <span>${prof.name}</span>
+        ${isCustom ? `<span class="pill-delete" data-delete-id="${prof.id}" title="Delete profile">✕</span>` : ''}
+      `;
+
+      // Profile click activation
+      pill.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('pill-delete')) {
+          e.stopPropagation();
+          const deleteId = e.target.getAttribute('data-delete-id');
+          if (window.electronAPI) {
+            const res = await window.electronAPI.deleteProfile(deleteId);
+            if (res && res.profiles) {
+              profiles = res.profiles;
+            }
+          }
+          if (window.Toast) {
+            window.Toast.show(`Deleted profile "${prof.name}"`, 'info');
+          }
+          renderProfiles();
+          return;
+        }
+
         if (!prof.isActive) {
           if (window.electronAPI) {
             const res = await window.electronAPI.applyProfile(prof.id);
@@ -534,7 +559,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
           profiles.forEach((p) => (p.isActive = p.id === prof.id));
           if (window.Toast) {
-            window.Toast.show(`Profile applied: ${prof.name}`, 'success');
+            window.Toast.show(`Profile applied: ${prof.icon || '🎛️'} ${prof.name}`, 'success');
           }
           renderAll();
         }
@@ -551,6 +576,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     addBtn.innerHTML = '<span>➕</span> <span>New Profile</span>';
     addBtn.addEventListener('click', () => {
       profileNameInput.value = '';
+      profileIconInput.value = '🎧';
       modalNewProfile.classList.add('open');
       profileNameInput.focus();
     });
@@ -558,9 +584,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     profilesRow.appendChild(addBtn);
   }
 
-  // Modal Handlers
+  // Modal Handlers & Chips
   modalClose.addEventListener('click', () => modalNewProfile.classList.remove('open'));
   modalCancel.addEventListener('click', () => modalNewProfile.classList.remove('open'));
+
+  // Quick name chips
+  document.querySelectorAll('.modal-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const chipName = chip.getAttribute('data-name');
+      profileNameInput.value = chipName;
+      if (chipName.includes('Gaming')) profileIconInput.value = '🎮';
+      else if (chipName.includes('Focus')) profileIconInput.value = '🎵';
+      else if (chipName.includes('Meet')) profileIconInput.value = '💼';
+      else if (chipName.includes('Night')) profileIconInput.value = '🌙';
+    });
+  });
+
+  // Emoji picker options
+  document.querySelectorAll('.emoji-opt').forEach((opt) => {
+    opt.addEventListener('click', () => {
+      profileIconInput.value = opt.textContent.trim();
+    });
+  });
 
   modalSave.addEventListener('click', async () => {
     const name = profileNameInput.value.trim();
@@ -581,7 +626,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (window.Toast) {
-      window.Toast.show(`Created & saved profile "${name}"`, 'success');
+      window.Toast.show(`Created & saved profile "${icon} ${name}"`, 'success');
     }
     renderProfiles();
   });

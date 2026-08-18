@@ -717,6 +717,7 @@
   cursor: pointer;
   white-space: nowrap;
   transition: all var(--transition-fast);
+  position: relative;
 }
 
 .profile-pill:hover {
@@ -732,6 +733,30 @@
   border-color: transparent;
   box-shadow: 0 0 14px var(--accent-glow);
   font-weight: 600;
+}
+
+.profile-pill .pill-delete {
+  margin-left: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.3);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all var(--transition-fast);
+}
+
+.profile-pill:hover .pill-delete {
+  display: inline-flex;
+}
+
+.profile-pill .pill-delete:hover {
+  background: var(--status-error);
+  color: #ffffff;
+  transform: scale(1.2);
 }
 
 .profile-pill.add-btn {
@@ -829,7 +854,7 @@
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
-  width: 320px;
+  width: 360px;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -887,6 +912,66 @@
 .modal-input:focus {
   border-color: var(--accent-secondary);
   box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.modal-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.modal-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.modal-chip:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: var(--accent-secondary);
+  color: #ffffff;
+}
+
+.icon-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-input {
+  width: 48px;
+  text-align: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.modal-emoji-picker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  overflow-x: auto;
+}
+
+.emoji-opt {
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  transition: transform var(--transition-fast);
+}
+
+.emoji-opt:hover {
+  transform: scale(1.3);
 }
 
 .modal-actions {

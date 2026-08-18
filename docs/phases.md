@@ -11,8 +11,8 @@
 Phase 1: Project Setup          ██████████  COMPLETED ✅
 Phase 2: Audio Engine           ██████████  COMPLETED ✅
 Phase 3: User Interface         ██████████  COMPLETED ✅
-Phase 4: Profile System         ██░░░░░░░░  CURRENT ⬅️
-Phase 5: System Integration     ░░░░░░░░░░  NOT STARTED
+Phase 4: Profile System         ██████████  COMPLETED ✅
+Phase 5: System Integration     ██░░░░░░░░  CURRENT ⬅️
 Phase 6: Polish & Packaging     ░░░░░░░░░░  NOT STARTED
 ```
 
@@ -167,54 +167,54 @@ Build the complete Noir UI — interactive device cards, app audio cards with vo
 ### Known Blockers
 - None
 
----
-
-## Phase 4: Profile System
+## Phase 4: Profile System ✅ COMPLETED
 
 ### Objective
 Implement the profile management system — create, save, load, delete, and apply audio routing profiles.
 
 ### Features/Components
-- **Profile Manager**: CRUD operations for profiles
+- **Profile Manager**: CRUD operations for profiles (`src/profiles/profileManager.js`)
 - **Profile Data Model**: Schema for profile JSON (name, icon, mappings, volumes)
-- **Profile UI**: Profile bar at bottom of main window, create/edit modal
-- **Default Profiles**: Pre-built Gaming, Music, Work profiles
-- **Profile Application**: Apply a profile → set all routing and volume at once
-- **Profile Persistence**: Save to `%APPDATA%/SoundFlow/profiles/`
-- **Conflict Resolution**: Handle cases where a profile references a disconnected device
+- **Profile UI**: Profile bar at bottom of main window, create/edit modal with emoji picker and preset chips
+- **Default Profiles**: Pre-built Gaming, Music & Focus, Work / Meetings, and Cinema profiles
+- **Profile Application**: Apply a profile → set all routing and volume at once in batch
+- **Profile Persistence**: Save to `%APPDATA%/Noir/profiles.json`
+- **Conflict Resolution**: Handle cases where a profile references a disconnected device (graceful fallback)
 
 ### Dependencies
 - Phase 2 complete (audio engine to apply routing changes)
 - Phase 3 complete (UI to display profile controls)
 
 ### Definition of Done
-- [ ] User can create a new profile capturing current state
-- [ ] User can name and assign an icon to a profile
-- [ ] User can apply a profile with one click
-- [ ] Profile restores all routing and volume settings correctly
-- [ ] User can edit and delete existing profiles
-- [ ] Default profiles are available on first launch
-- [ ] Profiles persist across app restarts
-- [ ] Graceful handling when profile references unavailable device
-- [ ] Profile UI is integrated into main window
+- [x] User can create a new profile capturing current state
+- [x] User can name and assign an icon to a profile
+- [x] User can apply a profile with one click
+- [x] Profile restores all routing and volume settings correctly
+- [x] User can edit and delete existing profiles
+- [x] Default profiles are available on first launch
+- [x] Profiles persist across app restarts
+- [x] Graceful handling when profile references unavailable device
+- [x] Profile UI is integrated into main window
 
 ### Verification Criteria
-- Create profile → close app → reopen → profile exists
-- Apply profile → all routing/volume matches saved state
-- Delete profile → file removed from disk
-- Apply profile with missing device → user notified, remaining settings applied
+- [x] Create profile → close app → reopen → profile exists
+- [x] Apply profile → all routing/volume matches saved state
+- [x] Delete profile → file removed from disk
+- [x] Apply profile with missing device → user notified, remaining settings applied
 
 ### Current Status
-🔴 **Not Started**
+🟢 **Completed (2026-08-18)**
 
 ### Completed Work
-_(none)_
+- Built `src/profiles/profileManager.js` with persistent JSON storage in `%APPDATA%/Noir/`
+- Implemented default presets (Gaming, Music & Focus, Work / Meetings, Cinema)
+- Added batch audio routing, volume scaling, and mute application
+- Built interactive create profile modal with emoji picker and name suggestion chips
+- Implemented profile deletion and active profile switching
+- Passed `npm run lint` with 0 errors
 
 ### Remaining Work
-- All components listed above
-
-### Known Blockers
-- Need to decide on profile icon system (emoji vs custom icons)
+- None for Phase 4
 
 ---
 
