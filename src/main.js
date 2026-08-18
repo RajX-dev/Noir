@@ -6,6 +6,8 @@ const profileManager = require('./profiles/profileManager');
 const trayManager = require('./tray/trayManager');
 const WindowStateManager = require('./utils/windowState');
 
+app.setName('noir');
+
 let mainWindow = null;
 let isQuitting = false;
 const windowState = new WindowStateManager({ defaultWidth: 1080, defaultHeight: 720 });
@@ -13,7 +15,9 @@ const windowState = new WindowStateManager({ defaultWidth: 1080, defaultHeight: 
 // Ensure single-instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
+  console.log('[Noir] Another instance is already running. Focusing active window.');
   app.quit();
+  process.exit(0);
 } else {
   app.on('second-instance', () => {
     if (mainWindow) {
