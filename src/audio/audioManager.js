@@ -45,14 +45,20 @@ class AudioManager {
       this.cachedDevices = deviceItems.map((item, index) => {
         const id = item['Command-Line Friendly ID'] || item['Item ID'] || `dev-${index}`;
         const name = item.Name || 'Audio Endpoint';
+        const hardwareName = item['Device Name'];
+        let displayName = name;
+        if (hardwareName && hardwareName.trim() && !name.toLowerCase().includes(hardwareName.toLowerCase())) {
+          displayName = `${name} (${hardwareName})`;
+        }
+
         const isDefault = item.Default === 'Render' || item['Default Multimedia'] === 'Yes';
         const isActive = item['Device State'] === 'Active' || item['Device State'] === 'Enabled';
 
         return {
           id,
           name,
-          displayName: name,
-          type: this.inferDeviceType(name),
+          displayName,
+          type: this.inferDeviceType(`${name} ${hardwareName || ''}`),
           isDefault,
           isActive,
           commandId: item['Command-Line Friendly ID'] || item.Name

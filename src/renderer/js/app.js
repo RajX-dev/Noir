@@ -1,4 +1,4 @@
-// Noir Main UI Controller — Phase 3
+// Noir Main UI Controller — Spider Connection Patchbay
 // Ref: docs/architecture.md, docs/visuals.md
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -8,7 +8,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   let profiles = [];
   let activeDropdown = null;
 
+  // Drag-cable state
+  let isDraggingCable = false;
+  let dragSourceSessionId = null;
+  let dragSourceSocketPos = null;
+
   // DOM Elements
+  const spiderBoard = document.getElementById('spider-board');
+  const spiderCanvas = document.getElementById('spider-canvas');
   const devicesGrid = document.getElementById('devices-grid');
   const devicesCount = document.getElementById('devices-count');
   const appsList = document.getElementById('apps-list');
@@ -71,6 +78,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  function getDeviceColor(type) {
+    switch (type) {
+      case 'headphones': return '#a855f7';
+      case 'bluetooth': return '#06b6d4';
+      case 'hdmi': return '#ec4899';
+      case 'usb': return '#f59e0b';
+      case 'speakers':
+      default:
+        return '#10b981';
+    }
+  }
+
   function getAppIcon(name = '', processName = '') {
     const combined = `${name} ${processName}`.toLowerCase();
     if (combined.includes('spotify')) return '🟢';
@@ -103,9 +122,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderDevices();
     renderApps();
     renderProfiles();
+    requestAnimationFrame(renderSpiderCables);
   }
 
-  // 1. Render Devices (with Drag-and-Drop Drop Target handlers)
+  // 1. Render Left Column: Output Endpoints
   function renderDevices() {
     devicesGrid.innerHTML = '';
     devicesCount.textContent = `${devices.length} active`;
@@ -117,21 +137,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       card.setAttribute('data-device-id', dev.id);
       card.setAttribute('tabindex', '0');
 
-      // Count apps routed to this device
       const routedCount = sessions.filter((s) => s.deviceId === dev.id).length;
 
       card.innerHTML = `
         <div class="device-card-header">
-          <div class="device-icon-wrap">
+          <div class="device-icon-wrap" style="color: ${getDeviceColor(dev.type)}">
             ${getDeviceIconSvg(dev.type)}
           </div>
           <span class="status-dot ${dev.isActive ? 'online' : ''}" title="${dev.isActive ? 'Connected' : 'Offline'}"></span>
         </div>
-        <div class="device-name" title="${dev.name}">${dev.displayName || dev.name}</div>
+        <div class="device-name" title="${dev.displayName || dev.name}">${dev.displayName || dev.name}</div>
         <div class="device-sub">
           <span>${dev.isDefault ? 'Default' : (dev.type.toUpperCase())}</span>
           <span class="device-app-count">${routedCount} app${routedCount !== 1 ? 's' : ''}</span>
         </div>
+        <!-- Right side Connection Port Socket -->
+        <div class="socket-port input-socket" id="socket-dev-${dev.id}" data-device-id="${dev.id}" style="border-color: ${getDeviceColor(dev.type)}" title="Drop audio connection cable here"></div>
       `;
 
       // Drag and Drop Listeners for Device Card Target
@@ -142,7 +163,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       card.addEventListener('dragleave', (e) => {
-        // Prevent premature removal when hovering child elements
         if (!card.contains(e.relatedTarget)) {
           card.classList.remove('drag-over');
         }
@@ -151,36 +171,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       card.addEventListener('drop', async (e) => {
         e.preventDefault();
         card.classList.remove('drag-over');
-        const sessionId = e.dataTransfer.getData('text/plain');
+        const sessionId = e.dataTransfer.getData('text/plain') || dragSourceSessionId;
 
         if (!sessionId) return;
-
-        const session = sessions.find((s) => s.id === sessionId);
-        if (!session) return;
-
-        if (session.deviceId !== dev.id) {
-          session.deviceId = dev.id;
-          if (window.electronAPI) {
-            await window.electronAPI.routeSession(session.id, dev.id);
-          }
-
-          // Trigger drop pulse animation
-          card.classList.add('drop-pulse');
-          setTimeout(() => card.classList.remove('drop-pulse'), 500);
-
-          if (window.Toast) {
-            window.Toast.show(`Routed ${session.displayName} ➔ ${dev.displayName || dev.name}`, 'success');
-          }
-
-          renderAll();
-        }
+        routeSessionToDevice(sessionId, dev.id);
       });
 
       devicesGrid.appendChild(card);
     });
   }
 
-  // 2. Render Apps (with Draggable Support & Interactive Sliders)
+  // 2. Render Right Column: Audio Sources (Apps)
   function renderApps() {
     appsList.innerHTML = '';
     appsCount.textContent = `${sessions.length} sessions`;
@@ -207,6 +208,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const volPercent = Math.round(session.volume * 100);
 
       card.innerHTML = `
+        <!-- Left side Connection Port Socket -->
+        <div class="socket-port output-socket" id="socket-app-${session.id}" data-session-id="${session.id}" style="border-color: ${getDeviceColor(currentDev.type)}" title="Drag cable to connect to output device"></div>
+
         <div class="app-card-top">
           <div class="app-meta">
             <div class="app-icon">${getAppIcon(session.displayName, session.processName)}</div>
@@ -249,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       appsList.appendChild(card);
 
-      // Drag and Drop Listeners for App Card
+      // App Card Drag and Drop
       card.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', session.id);
         e.dataTransfer.effectAllowed = 'move';
@@ -261,7 +265,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('.device-card').forEach((d) => d.classList.remove('drag-over'));
       });
 
-      // Register real-time visualizer meter with volume coupling
+      // Socket Mouse-drag Cable Patching
+      const appSocket = card.querySelector('.socket-port');
+      appSocket.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        startCableDrag(session.id, appSocket);
+      });
+
+      // Register real-time visualizer meter
       const meterEl = document.getElementById(`meter-${session.id}`);
       if (window.Visualizer) {
         window.Visualizer.registerMeter(session.id, meterEl, session.peakLevel || 0.6, session.isMuted ? 0 : session.volume);
@@ -288,15 +299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           activeDropdown = null;
 
           if (targetDevId !== session.deviceId) {
-            session.deviceId = targetDevId;
-            if (window.electronAPI) {
-              await window.electronAPI.routeSession(session.id, targetDevId);
-            }
-            const targetDev = devices.find((d) => d.id === targetDevId);
-            if (window.Toast && targetDev) {
-              window.Toast.show(`Routed ${session.displayName} ➔ ${targetDev.displayName || targetDev.name}`, 'success');
-            }
-            renderAll();
+            routeSessionToDevice(session.id, targetDevId);
           }
         });
       });
@@ -331,7 +334,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateVolumeUI(val);
       });
 
-      // Keyboard arrow navigation on slider
       slider.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
           const newVal = Math.min(100, parseInt(slider.value, 10) + 5);
@@ -364,7 +366,134 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // 3. Render Profiles
+  // Common routing action
+  async function routeSessionToDevice(sessionId, targetDevId) {
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session || session.deviceId === targetDevId) return;
+
+    session.deviceId = targetDevId;
+    if (window.electronAPI) {
+      await window.electronAPI.routeSession(session.id, targetDevId);
+    }
+
+    const targetDevCard = document.getElementById(`device-${targetDevId}`);
+    if (targetDevCard) {
+      targetDevCard.classList.add('drop-pulse');
+      setTimeout(() => targetDevCard.classList.remove('drop-pulse'), 500);
+    }
+
+    const targetDev = devices.find((d) => d.id === targetDevId);
+    if (window.Toast && targetDev) {
+      window.Toast.show(`Routed ${session.displayName} ➔ ${targetDev.displayName || targetDev.name}`, 'success');
+    }
+
+    renderAll();
+  }
+
+  // 3. Spider Connection Canvas Rendering Engine
+  function renderSpiderCables() {
+    if (!spiderCanvas || !spiderBoard) return;
+
+    const boardRect = spiderBoard.getBoundingClientRect();
+    spiderCanvas.setAttribute('width', boardRect.width);
+    spiderCanvas.setAttribute('height', boardRect.height);
+
+    let svgHtml = '';
+
+    sessions.forEach((session) => {
+      const appSocket = document.getElementById(`socket-app-${session.id}`);
+      const devSocket = document.getElementById(`socket-dev-${session.deviceId}`);
+
+      if (appSocket && devSocket) {
+        const appRect = appSocket.getBoundingClientRect();
+        const devRect = devSocket.getBoundingClientRect();
+
+        // Coordinates relative to spider board container
+        const x1 = devRect.left + devRect.width / 2 - boardRect.left;
+        const y1 = devRect.top + devRect.height / 2 - boardRect.top + spiderBoard.scrollTop;
+        const x2 = appRect.left + appRect.width / 2 - boardRect.left;
+        const y2 = appRect.top + appRect.height / 2 - boardRect.top + spiderBoard.scrollTop;
+
+        // Smooth cubic bezier S-curve
+        const deltaX = Math.abs(x2 - x1) * 0.55;
+        const cp1x = x1 + deltaX;
+        const cp1y = y1;
+        const cp2x = x2 - deltaX;
+        const cp2y = y2;
+        const d = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+
+        const targetDev = devices.find((dev) => dev.id === session.deviceId);
+        const color = getDeviceColor(targetDev ? targetDev.type : 'speakers');
+
+        // Outer glow layer
+        svgHtml += `<path d="${d}" class="spider-cable-glow" stroke="${color}" stroke-width="8"/>`;
+        // Core active wire layer
+        svgHtml += `<path d="${d}" class="spider-cable active-flow" stroke="${color}" stroke-width="2.5" data-session-id="${session.id}"/>`;
+      }
+    });
+
+    spiderCanvas.innerHTML = svgHtml;
+  }
+
+  // Interactive Live Cable Dragging
+  function startCableDrag(sessionId, socketEl) {
+    isDraggingCable = true;
+    dragSourceSessionId = sessionId;
+
+    const boardRect = spiderBoard.getBoundingClientRect();
+    const sockRect = socketEl.getBoundingClientRect();
+    dragSourceSocketPos = {
+      x: sockRect.left + sockRect.width / 2 - boardRect.left,
+      y: sockRect.top + sockRect.height / 2 - boardRect.top + spiderBoard.scrollTop
+    };
+
+    socketEl.classList.add('active-wire');
+
+    const onMouseMove = (e) => {
+      if (!isDraggingCable) return;
+
+      const curX = e.clientX - boardRect.left;
+      const curY = e.clientY - boardRect.top + spiderBoard.scrollTop;
+
+      renderSpiderCables();
+
+      // Draw active dragging cable
+      const x2 = dragSourceSocketPos.x;
+      const y2 = dragSourceSocketPos.y;
+      const deltaX = Math.abs(curX - x2) * 0.5;
+      const d = `M ${curX} ${curY} C ${curX + deltaX} ${curY}, ${x2 - deltaX} ${y2}, ${x2} ${y2}`;
+
+      spiderCanvas.innerHTML += `
+        <path d="${d}" stroke="#a855f7" stroke-width="6" class="spider-cable-glow"/>
+        <path d="${d}" stroke="#ffffff" stroke-width="3" stroke-dasharray="4 4" class="spider-cable active-flow"/>
+      `;
+    };
+
+    const onMouseUp = (e) => {
+      isDraggingCable = false;
+      socketEl.classList.remove('active-wire');
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+
+      // Check if dropped on a device card or socket
+      const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+      const targetDevCard = elemBelow ? elemBelow.closest('.device-card') : null;
+
+      if (targetDevCard) {
+        const targetDevId = targetDevCard.getAttribute('data-device-id');
+        if (targetDevId) {
+          routeSessionToDevice(dragSourceSessionId, targetDevId);
+        }
+      }
+
+      renderSpiderCables();
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
+
+  // 4. Render Profiles
   function renderProfiles() {
     profilesRow.innerHTML = '';
 
@@ -437,17 +566,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderProfiles();
   });
 
+  // Re-draw spider cables on scroll or window resize
+  spiderBoard.addEventListener('scroll', () => requestAnimationFrame(renderSpiderCables));
+  window.addEventListener('resize', () => requestAnimationFrame(renderSpiderCables));
+
   // Push Event Listeners from DeviceMonitor
   if (window.electronAPI) {
     window.electronAPI.onDevicesChanged((updatedDevices) => {
       devices = updatedDevices;
       renderDevices();
+      requestAnimationFrame(renderSpiderCables);
     });
 
     window.electronAPI.onSessionsChanged((updatedSessions) => {
       sessions = updatedSessions;
       renderApps();
       renderDevices();
+      requestAnimationFrame(renderSpiderCables);
     });
   }
 

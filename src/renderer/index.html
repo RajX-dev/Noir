@@ -18,6 +18,7 @@
           </svg>
         </div>
         <span class="brand-name">Noir</span>
+        <span class="brand-subtitle">Patchbay</span>
       </div>
       
       <div class="titlebar-actions">
@@ -33,26 +34,29 @@
       </div>
     </header>
 
-    <!-- 2. Main Content Container -->
-    <main class="main-container">
-      <!-- Output Devices Section -->
-      <section class="section" id="section-devices">
+    <!-- 2. Main Content Container (Spider Connection Board) -->
+    <main class="main-container spider-board" id="spider-board">
+      <!-- SVG Canvas for Spider Connection Cables -->
+      <svg id="spider-canvas" class="spider-canvas"></svg>
+
+      <!-- Left Column: Output Devices -->
+      <section class="section col-devices" id="section-devices">
         <div class="section-title">
-          <span>Output Devices</span>
+          <span>Output Endpoints</span>
           <span class="badge" id="devices-count">3 active</span>
         </div>
-        <div class="device-grid" id="devices-grid">
+        <div class="device-column-list" id="devices-grid">
           <!-- Populated by app.js -->
         </div>
       </section>
 
-      <!-- Running Applications Section -->
-      <section class="section" id="section-apps">
+      <!-- Right Column: Running Applications -->
+      <section class="section col-apps" id="section-apps">
         <div class="section-title">
-          <span>Running Applications</span>
+          <span>Audio Sources</span>
           <span class="badge" id="apps-count">4 sessions</span>
         </div>
-        <div class="apps-list" id="apps-list">
+        <div class="apps-column-list" id="apps-list">
           <!-- Populated by app.js -->
         </div>
       </section>
