@@ -376,6 +376,7 @@
   transition: all var(--transition-normal);
   position: relative;
   cursor: grab;
+  overflow: visible;
 }
 
 .app-card:hover {
@@ -496,11 +497,9 @@
   color: var(--text-secondary);
 }
 
-/* Dropdown Menu */
+/* Dropdown Menu — position:fixed to escape overflow:auto parents */
 .dropdown-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
+  position: fixed;
   background: rgba(22, 22, 34, 0.98);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -511,7 +510,7 @@
   width: max-content;
   min-width: 260px;
   max-width: 340px;
-  z-index: 9999;
+  z-index: 99999;
   display: none;
   flex-direction: column;
   gap: 3px;

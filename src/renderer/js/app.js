@@ -49,6 +49,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  // Close dropdown on scroll (fixed-position menus float detached otherwise)
+  if (spiderBoard) {
+    spiderBoard.addEventListener('scroll', () => {
+      if (activeDropdown) {
+        activeDropdown.classList.remove('show');
+        activeDropdown = null;
+      }
+    });
+  }
+
   // SVG Device Icon helper
   function getDeviceIconSvg(type) {
     switch (type) {
@@ -287,8 +297,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (activeDropdown && activeDropdown !== menu) {
           activeDropdown.classList.remove('show');
         }
+
+        const isOpening = !menu.classList.contains('show');
         menu.classList.toggle('show');
         activeDropdown = menu.classList.contains('show') ? menu : null;
+
+        // Position the fixed dropdown relative to the button in viewport coords
+        if (isOpening) {
+          const btnRect = routeBtn.getBoundingClientRect();
+          menu.style.top = `${btnRect.bottom + 6}px`;
+          menu.style.right = `${window.innerWidth - btnRect.right}px`;
+          menu.style.left = 'auto';
+        }
       });
 
       menu.querySelectorAll('.dropdown-item').forEach((item) => {
