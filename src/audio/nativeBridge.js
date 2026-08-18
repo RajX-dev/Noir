@@ -2,6 +2,8 @@ const path = require('path');
 const fs = require('fs');
 const { execFile } = require('child_process');
 
+const os = require('os');
+
 let SoundMixer = null;
 try {
   const nsm = require('native-sound-mixer');
@@ -10,7 +12,17 @@ try {
   console.warn('[NativeBridge] native-sound-mixer not available:', err.message);
 }
 
-const SVV_PATH = path.join(__dirname, '..', '..', 'assets', 'tools', 'SoundVolumeView.exe');
+function getSVVPath() {
+  const devPath = path.join(__dirname, '..', '..', 'assets', 'tools', 'SoundVolumeView.exe');
+  if (fs.existsSync(devPath)) return devPath;
+
+  if (process.resourcesPath) {
+    const prodPath = path.join(process.resourcesPath, 'assets', 'tools', 'SoundVolumeView.exe');
+    if (fs.existsSync(prodPath)) return prodPath;
+  }
+
+  return devPath;
+}
 
 const NativeBridge = {
   isAvailable() {
@@ -24,11 +36,12 @@ const NativeBridge = {
    */
   execSVV(args) {
     return new Promise((resolve, reject) => {
-      if (!fs.existsSync(SVV_PATH)) {
-        return reject(new Error(`SoundVolumeView not found at ${SVV_PATH}`));
+      const svvPath = getSVVPath();
+      if (!fs.existsSync(svvPath)) {
+        return reject(new Error(`SoundVolumeView not found at ${svvPath}`));
       }
 
-      execFile(SVV_PATH, args, (err) => {
+      execFile(svvPath, args, (err) => {
         if (err) {
           return reject(err);
         }
@@ -42,7 +55,7 @@ const NativeBridge = {
    * @returns {Promise<Array>}
    */
   async getSystemAudioSnapshot() {
-    const tempFile = path.join(__dirname, '..', '..', 'assets', 'tools', `snapshot_${Date.now()}.json`);
+    const tempFile = path.join(os.tmpdir(), `noir_audio_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.json`);
     try {
       await this.execSVV(['/sjson', tempFile]);
       if (!fs.existsSync(tempFile)) {

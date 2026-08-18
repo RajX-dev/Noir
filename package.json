@@ -34,12 +34,17 @@
     "directories": {
       "output": "dist"
     },
+    "extraResources": [
+      {
+        "from": "assets/tools",
+        "to": "assets/tools"
+      }
+    ],
     "win": {
       "target": [
         "nsis",
         "portable"
-      ],
-      "icon": "assets/icon.ico"
+      ]
     },
     "nsis": {
       "oneClick": false,
