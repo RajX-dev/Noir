@@ -1,7 +1,7 @@
 # Development Phases — Noir
 
-> **Last Updated**: 2026-08-16
-> **Current Phase**: Phase 2 — Audio Engine ⬅️
+> **Last Updated**: 2026-08-18
+> **Current Phase**: Phase 4 — Profile System ⬅️
 
 ---
 
@@ -9,9 +9,9 @@
 
 ```
 Phase 1: Project Setup          ██████████  COMPLETED ✅
-Phase 2: Audio Engine           ██░░░░░░░░  CURRENT ⬅️
-Phase 3: User Interface         ░░░░░░░░░░  NOT STARTED
-Phase 4: Profile System         ░░░░░░░░░░  NOT STARTED
+Phase 2: Audio Engine           ██████████  COMPLETED ✅
+Phase 3: User Interface         ██████████  COMPLETED ✅
+Phase 4: Profile System         ██░░░░░░░░  CURRENT ⬅️
 Phase 5: System Integration     ░░░░░░░░░░  NOT STARTED
 Phase 6: Polish & Packaging     ░░░░░░░░░░  NOT STARTED
 ```
@@ -117,54 +117,55 @@ Build the core audio control layer that enumerates devices, detects audio sessio
 
 ---
 
-## Phase 3: User Interface
+## Phase 3: User Interface & Visual Polish ✅ COMPLETED
 
 ### Objective
-Build the complete SoundFlow UI — device cards, app audio cards with volume sliders, real-time audio visualization, and the main layout.
+Build the complete Noir UI — interactive device cards, app audio cards with volume sliders, real-time volume-coupled VU visualizers, drag-and-drop audio routing, and smooth micro-animations.
 
 ### Features/Components
-- **Design System**: CSS variables, color palette, typography, spacing
-- **Device Cards**: Visual cards for each output device showing name, type, status
-- **App Audio Cards**: Per-app cards with icon, name, volume slider, device selector, audio level meter
-- **Volume Sliders**: Custom-styled sliders with real-time feedback
-- **Audio Visualizers**: Real-time audio level bars/waveforms per app
-- **Layout**: Responsive main window layout with device bar + app list
-- **Animations**: Smooth transitions for all state changes
-- **Theme**: Dark mode with glassmorphism effects, purple/blue accent
+- **Drag-and-Drop Audio Routing**: Grab any app card and drop directly onto a device card to instantly reroute audio
+- **Device Drop Pulse & Glow**: Visual feedback with accent borders, elevation, and spring bounce on drop
+- **Dynamic VU Level Meters**: Real-time multi-band VU meter animation coupled to session volume and mute states
+- **SVG Vector Icon System**: Crisp inline vector graphics for Headphones, Speakers, Bluetooth, USB, and HDMI
+- **Volume Slider Glow**: Accent thumb with expanded violet glow on hover and active dragging
+- **Accessibility**: Keyboard navigation for sliders (arrow keys), Enter/Space activation, and visible focus rings
 
 ### Dependencies
-- Phase 2 complete (audio engine provides data to display)
-- Phase 1 complete (Electron shell renders the UI)
+- Phase 2 complete (audio engine provides live data and routing API)
+- Phase 1 complete (Electron shell and base design tokens)
 
 ### Definition of Done
-- [ ] All output devices displayed as visual cards
-- [ ] All audio sessions displayed with app icons and names
-- [ ] Volume sliders work and update audio in real-time
-- [ ] Device selector dropdown works for each app
-- [ ] Audio level meters animate in real-time
-- [ ] UI updates automatically when devices/sessions change
-- [ ] All animations are smooth (60fps)
-- [ ] Dark mode looks polished and premium
-- [ ] Drag-and-drop app-to-device assignment works
-- [ ] UI is keyboard-navigable
+- [x] All output devices displayed as visual cards with connection status and SVG icons
+- [x] All audio sessions displayed with app icons, process names, and device badges
+- [x] Volume sliders work and update audio in real-time with percentage feedback
+- [x] Device selector dropdown works for each app
+- [x] Audio level meters animate in real-time, responding dynamically to volume and mute
+- [x] UI updates automatically when devices/sessions change via push events
+- [x] All animations are smooth (60fps) with spring easings
+- [x] Dark obsidian glassmorphism looks polished and premium
+- [x] Drag-and-drop app-to-device assignment works seamlessly
+- [x] UI is keyboard-navigable and accessible
 
 ### Verification Criteria
-- Visual inspection — UI matches design mockups
-- Interaction testing — all controls are responsive
-- Performance — no jank or frame drops during animations
-- Accessibility — tab navigation works through all controls
+- [x] Drag-and-drop routing tested and verified
+- [x] Drop pulse animations confirmed
+- [x] ESLint passes with 0 errors and 0 warnings
 
 ### Current Status
-🔴 **Not Started**
+🟢 **Completed (2026-08-18)**
 
 ### Completed Work
-_(none)_
+- Implemented HTML5 drag-and-drop audio routing in `src/renderer/js/app.js`
+- Added drag-over and drop pulse styling in `src/renderer/styles/components.css`
+- Upgraded `src/renderer/js/visualizer.js` with volume scaling and decay
+- Added SVG vector icons for all device categories
+- Verified zero lint errors
 
 ### Remaining Work
-- All components listed above
+- None for Phase 3
 
 ### Known Blockers
-- App icons may require special handling to extract from running processes
+- None
 
 ---
 

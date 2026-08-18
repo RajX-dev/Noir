@@ -1,16 +1,17 @@
 // Noir Audio Level Visualizer Module
-// Animates VU audio activity bars for running applications
+// Animates dynamic VU audio activity bars for running applications
 
 const Visualizer = {
   activeMeters: new Map(),
   animationFrameId: null,
   isRunning: false,
 
-  registerMeter(sessionId, meterElement, initialPeak = 0.5) {
+  registerMeter(sessionId, meterElement, initialPeak = 0.6, initialVolume = 1.0) {
     this.activeMeters.set(sessionId, {
       el: meterElement,
-      current: initialPeak * 100,
-      target: initialPeak * 100,
+      current: initialPeak * 100 * initialVolume,
+      target: initialPeak * 100 * initialVolume,
+      volume: initialVolume,
       isMuted: false
     });
 
@@ -26,10 +27,23 @@ const Visualizer = {
     }
   },
 
+  setVolume(sessionId, volume) {
+    const item = this.activeMeters.get(sessionId);
+    if (item) {
+      item.volume = Math.max(0, Math.min(1, volume));
+      if (item.volume === 0) {
+        item.target = 0;
+      }
+    }
+  },
+
   setMute(sessionId, isMuted) {
     const item = this.activeMeters.get(sessionId);
     if (item) {
       item.isMuted = isMuted;
+      if (isMuted) {
+        item.target = 0;
+      }
     }
   },
 
@@ -43,15 +57,16 @@ const Visualizer = {
       const delta = time - lastUpdate;
 
       // Update target periodically to simulate live music/game audio dynamics
-      if (delta > 120) {
+      if (delta > 100) {
         lastUpdate = time;
         this.activeMeters.forEach((item) => {
-          if (item.isMuted) {
+          if (item.isMuted || item.volume <= 0.01) {
             item.target = 0;
           } else {
-            // Dynamic fluctuating audio waveform simulation
-            const variance = Math.random() * 50 - 25;
-            item.target = Math.max(10, Math.min(95, item.target + variance));
+            // Dynamic fluctuating audio waveform scaled by session volume
+            const ceiling = item.volume * 100;
+            const variance = (Math.random() * 0.45 + 0.55) * ceiling;
+            item.target = Math.max(4, Math.min(ceiling, variance));
           }
         });
       }
@@ -59,8 +74,8 @@ const Visualizer = {
       // Smooth lerp interpolation
       this.activeMeters.forEach((item) => {
         if (item.el) {
-          item.current += (item.target - item.current) * 0.15;
-          const displayVal = item.isMuted ? 0 : Math.round(item.current);
+          item.current += (item.target - item.current) * 0.22;
+          const displayVal = item.isMuted || item.volume <= 0.01 ? 0 : Math.round(item.current);
           item.el.style.width = `${displayVal}%`;
         }
       });

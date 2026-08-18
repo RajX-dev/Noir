@@ -1,4 +1,4 @@
-// Noir Main UI Controller
+// Noir Main UI Controller — Phase 3
 // Ref: docs/architecture.md, docs/visuals.md
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -42,8 +42,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Icon map helpers
-  function getDeviceIcon(type) {
+  // SVG Device Icon helper
+  function getDeviceIconSvg(type) {
+    switch (type) {
+      case 'headphones':
+        return '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12v7c0 1.66 1.34 3 3 3h2v-8H4v-2c0-4.41 3.59-8 8-8s8 3.59 8 8v2h-3v8h2c1.66 0 3-1.34 3-3v-7c0-5.52-4.48-10-10-10z"/></svg>';
+      case 'bluetooth':
+        return '<svg viewBox="0 0 24 24"><path d="M14.79 10.62L12 7.83V16.17l2.79-2.79 4.59 4.59L12 24V0l7.38 5.97-4.59 4.65zm-2.79-4.8L10.21 4.03l-4.6 4.59 6.39 6.38V5.82zm0 12.36V13.8L5.61 19.38l4.59 4.59 1.8-1.79z"/></svg>';
+      case 'hdmi':
+        return '<svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>';
+      case 'usb':
+        return '<svg viewBox="0 0 24 24"><path d="M15 7v4h1v2h-3V5h2l-3-4-3 4h2v8H8v-2.07c.6-.37 1-.98 1-1.68 0-1.1-.9-2-2-2s-2 .9-2 2c0 .7.4 1.31 1 1.68V13c0 1.1.9 2 2 2h3v5.05c-.6.37-1 .98-1 1.68 0 1.1.9 2 2 2s2-.9 2-2c0-.7-.4-1.31-1-1.68V15h3c1.1 0 2-.9 2-2v-2h1V7h-4z"/></svg>';
+      case 'speakers':
+      default:
+        return '<svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 3.5c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 13.5c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>';
+    }
+  }
+
+  function getDeviceEmoji(type) {
     switch (type) {
       case 'headphones': return '🎧';
       case 'bluetooth': return '📡';
@@ -89,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderProfiles();
   }
 
-  // 1. Render Devices
+  // 1. Render Devices (with Drag-and-Drop Drop Target handlers)
   function renderDevices() {
     devicesGrid.innerHTML = '';
     devicesCount.textContent = `${devices.length} active`;
@@ -98,6 +114,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const card = document.createElement('div');
       card.className = `device-card ${dev.isDefault ? 'active' : ''}`;
       card.id = `device-${dev.id}`;
+      card.setAttribute('data-device-id', dev.id);
+      card.setAttribute('tabindex', '0');
 
       // Count apps routed to this device
       const routedCount = sessions.filter((s) => s.deviceId === dev.id).length;
@@ -105,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       card.innerHTML = `
         <div class="device-card-header">
           <div class="device-icon-wrap">
-            <span>${getDeviceIcon(dev.type)}</span>
+            ${getDeviceIconSvg(dev.type)}
           </div>
           <span class="status-dot ${dev.isActive ? 'online' : ''}" title="${dev.isActive ? 'Connected' : 'Offline'}"></span>
         </div>
@@ -116,21 +134,63 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       `;
 
+      // Drag and Drop Listeners for Device Card Target
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        card.classList.add('drag-over');
+      });
+
+      card.addEventListener('dragleave', (e) => {
+        // Prevent premature removal when hovering child elements
+        if (!card.contains(e.relatedTarget)) {
+          card.classList.remove('drag-over');
+        }
+      });
+
+      card.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        const sessionId = e.dataTransfer.getData('text/plain');
+
+        if (!sessionId) return;
+
+        const session = sessions.find((s) => s.id === sessionId);
+        if (!session) return;
+
+        if (session.deviceId !== dev.id) {
+          session.deviceId = dev.id;
+          if (window.electronAPI) {
+            await window.electronAPI.routeSession(session.id, dev.id);
+          }
+
+          // Trigger drop pulse animation
+          card.classList.add('drop-pulse');
+          setTimeout(() => card.classList.remove('drop-pulse'), 500);
+
+          if (window.Toast) {
+            window.Toast.show(`Routed ${session.displayName} ➔ ${dev.displayName || dev.name}`, 'success');
+          }
+
+          renderAll();
+        }
+      });
+
       devicesGrid.appendChild(card);
     });
   }
 
-  // 2. Render Apps
+  // 2. Render Apps (with Draggable Support & Interactive Sliders)
   function renderApps() {
     appsList.innerHTML = '';
     appsCount.textContent = `${sessions.length} sessions`;
 
     if (sessions.length === 0) {
       appsList.innerHTML = `
-        <div style="text-align: center; padding: 40px var(--space-md); color: var(--text-muted);">
+        <div style="text-align: center; padding: 40px var(--space-md); color: var(--text-muted); animation: card-enter 300ms var(--ease-spring);">
           <div style="font-size: 32px; margin-bottom: 8px;">🎵</div>
           <div style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">No Active Audio Sessions</div>
-          <div style="font-size: 11px; margin-top: 4px;">Play music or launch an app to route audio</div>
+          <div style="font-size: 11px; margin-top: 4px;">Play music, video, or a game to route audio</div>
         </div>
       `;
       return;
@@ -138,8 +198,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     sessions.forEach((session) => {
       const card = document.createElement('div');
-      card.className = 'app-card';
+      card.className = 'app-card card-enter';
       card.id = `session-${session.id}`;
+      card.setAttribute('draggable', 'true');
+      card.setAttribute('tabindex', '0');
 
       const currentDev = devices.find((d) => d.id === session.deviceId) || devices.find((d) => d.isDefault) || devices[0] || { name: 'Default Device', type: 'speakers' };
       const volPercent = Math.round(session.volume * 100);
@@ -154,14 +216,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
           </div>
           <div class="route-selector">
-            <button class="route-dropdown-btn" id="btn-route-${session.id}">
-              <span class="route-label">${getDeviceIcon(currentDev.type)} ${currentDev.displayName || currentDev.name}</span>
+            <button class="route-dropdown-btn" id="btn-route-${session.id}" aria-label="Select output device">
+              <span class="route-label">${getDeviceEmoji(currentDev.type)} ${currentDev.displayName || currentDev.name}</span>
               <span class="route-arrow">▼</span>
             </button>
             <div class="dropdown-menu" id="menu-route-${session.id}">
               ${devices.map((d) => `
                 <button class="dropdown-item ${d.id === session.deviceId ? 'selected' : ''}" data-dev-id="${d.id}">
-                  <span>${getDeviceIcon(d.type)} ${d.displayName || d.name}</span>
+                  <span>${getDeviceEmoji(d.type)} ${d.displayName || d.name}</span>
                   ${d.id === session.deviceId ? '<span>✓</span>' : ''}
                 </button>
               `).join('')}
@@ -174,11 +236,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="meter-bar" id="meter-${session.id}"></div>
           </div>
           <div class="volume-control-row">
-            <button class="mute-btn ${session.isMuted ? 'muted' : ''}" id="mute-${session.id}" title="${session.isMuted ? 'Unmute' : 'Mute'}">
+            <button class="mute-btn ${session.isMuted ? 'muted' : ''}" id="mute-${session.id}" title="${session.isMuted ? 'Unmute' : 'Mute'}" aria-label="Toggle mute">
               ${session.isMuted ? '🔇' : '🔊'}
             </button>
             <div class="slider-container">
-              <input type="range" class="volume-slider" id="slider-${session.id}" min="0" max="100" value="${session.isMuted ? 0 : volPercent}">
+              <input type="range" class="volume-slider" id="slider-${session.id}" min="0" max="100" value="${session.isMuted ? 0 : volPercent}" aria-label="Volume level">
             </div>
             <span class="volume-percentage" id="vol-text-${session.id}">${session.isMuted ? '0%' : `${volPercent}%`}</span>
           </div>
@@ -187,10 +249,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       appsList.appendChild(card);
 
-      // Register real-time visualizer meter
+      // Drag and Drop Listeners for App Card
+      card.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', session.id);
+        e.dataTransfer.effectAllowed = 'move';
+        card.classList.add('dragging');
+      });
+
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        document.querySelectorAll('.device-card').forEach((d) => d.classList.remove('drag-over'));
+      });
+
+      // Register real-time visualizer meter with volume coupling
       const meterEl = document.getElementById(`meter-${session.id}`);
       if (window.Visualizer) {
-        window.Visualizer.registerMeter(session.id, meterEl, session.peakLevel || 0.5);
+        window.Visualizer.registerMeter(session.id, meterEl, session.peakLevel || 0.6, session.isMuted ? 0 : session.volume);
       }
 
       // Wire Dropdown
@@ -220,7 +294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             const targetDev = devices.find((d) => d.id === targetDevId);
             if (window.Toast && targetDev) {
-              window.Toast.show(`Routed ${session.displayName} → ${targetDev.displayName || targetDev.name}`, 'success');
+              window.Toast.show(`Routed ${session.displayName} ➔ ${targetDev.displayName || targetDev.name}`, 'success');
             }
             renderAll();
           }
@@ -232,8 +306,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const volText = document.getElementById(`vol-text-${session.id}`);
       const muteBtn = document.getElementById(`mute-${session.id}`);
 
-      slider.addEventListener('input', async (e) => {
-        const val = parseInt(e.target.value, 10);
+      const updateVolumeUI = async (val) => {
         volText.textContent = `${val}%`;
         session.volume = val / 100;
 
@@ -244,8 +317,30 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (window.Visualizer) window.Visualizer.setMute(session.id, false);
         }
 
+        if (window.Visualizer) {
+          window.Visualizer.setVolume(session.id, session.volume);
+        }
+
         if (window.electronAPI) {
           await window.electronAPI.setVolume(session.id, session.volume);
+        }
+      };
+
+      slider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        updateVolumeUI(val);
+      });
+
+      // Keyboard arrow navigation on slider
+      slider.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+          const newVal = Math.min(100, parseInt(slider.value, 10) + 5);
+          slider.value = newVal;
+          updateVolumeUI(newVal);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+          const newVal = Math.max(0, parseInt(slider.value, 10) - 5);
+          slider.value = newVal;
+          updateVolumeUI(newVal);
         }
       });
 
@@ -277,6 +372,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const pill = document.createElement('button');
       pill.className = `profile-pill ${prof.isActive ? 'active' : ''}`;
       pill.id = `profile-${prof.id}`;
+      pill.setAttribute('tabindex', '0');
       pill.innerHTML = `<span>${prof.icon || '🎛️'}</span> <span>${prof.name}</span>`;
 
       pill.addEventListener('click', async () => {
@@ -302,6 +398,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const addBtn = document.createElement('button');
     addBtn.className = 'profile-pill add-btn';
     addBtn.id = 'btn-add-profile';
+    addBtn.setAttribute('tabindex', '0');
     addBtn.innerHTML = '<span>➕</span> <span>New Profile</span>';
     addBtn.addEventListener('click', () => {
       profileNameInput.value = '';
