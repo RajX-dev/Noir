@@ -460,13 +460,14 @@
 .route-selector {
   position: relative;
   flex-shrink: 0;
+  z-index: 50;
 }
 
 .route-dropdown-btn {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-sm);
-  padding: 4px 8px;
+  padding: 5px 10px;
   color: var(--text-primary);
   font-size: 11px;
   font-family: var(--font-primary);
@@ -475,7 +476,7 @@
   gap: var(--space-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
-  max-width: 170px;
+  max-width: 210px;
 }
 
 .route-dropdown-btn:hover {
@@ -487,6 +488,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 170px;
 }
 
 .route-arrow {
@@ -497,18 +499,22 @@
 /* Dropdown Menu */
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   right: 0;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-medium);
+  background: rgba(22, 22, 34, 0.98);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(139, 92, 246, 0.35);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  padding: var(--space-xs);
-  min-width: 220px;
-  z-index: 100;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(139, 92, 246, 0.15);
+  padding: 6px;
+  width: max-content;
+  min-width: 260px;
+  max-width: 340px;
+  z-index: 9999;
   display: none;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   animation: dropdown-in 150ms var(--ease-out) forwards;
 }
 
@@ -517,12 +523,12 @@
 }
 
 @keyframes dropdown-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .dropdown-item {
-  padding: 6px 8px;
+  padding: 7px 10px;
   border-radius: var(--radius-sm);
   background: transparent;
   border: none;
@@ -535,17 +541,28 @@
   cursor: pointer;
   transition: background var(--transition-fast);
   text-align: left;
-  gap: 8px;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.dropdown-item span:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .dropdown-item:hover {
-  background: rgba(139, 92, 246, 0.15);
-  color: var(--text-accent);
+  background: rgba(139, 92, 246, 0.2);
+  color: #ffffff;
 }
 
 .dropdown-item.selected {
   color: var(--accent-secondary);
   font-weight: 600;
+  background: rgba(139, 92, 246, 0.1);
 }
 
 /* App Controls (Meter, Slider, Mute) */
