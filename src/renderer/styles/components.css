@@ -1012,3 +1012,88 @@
   transform: translateY(-1px);
   box-shadow: 0 0 16px var(--accent-glow-strong);
 }
+
+/* --------------------------------------------------------------------------
+   8. System Settings Modal
+   -------------------------------------------------------------------------- */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: 4px;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.settings-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-medium);
+}
+
+.settings-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.settings-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 34px;
+  height: 18px;
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.15);
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  transition: background 200ms ease;
+  flex-shrink: 0;
+}
+
+.settings-toggle::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 200ms ease;
+}
+
+.settings-toggle:checked {
+  background: var(--accent-primary);
+}
+
+.settings-toggle:checked::before {
+  transform: translateX(16px);
+}
+
+.settings-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+

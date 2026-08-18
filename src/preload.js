@@ -22,6 +22,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveProfile: (profile) => ipcRenderer.invoke('save-profile', profile),
   deleteProfile: (profileId) => ipcRenderer.invoke('delete-profile', profileId),
 
+  // System Integration APIs
+  getAutostartStatus: () => ipcRenderer.invoke('get-autostart-status'),
+  setAutostartStatus: (enabled) => ipcRenderer.invoke('set-autostart-status', enabled),
+
   // Push Event Listeners
   onDevicesChanged: (callback) => {
     const handler = (event, data) => callback(data);

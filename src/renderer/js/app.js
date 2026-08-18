@@ -631,6 +631,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderProfiles();
   });
 
+  // Settings Modal Handlers
+  const btnSettings = document.getElementById('btn-settings');
+  const modalSettings = document.getElementById('modal-settings');
+  const modalSettingsClose = document.getElementById('modal-settings-close');
+  const modalSettingsDone = document.getElementById('modal-settings-done');
+  const settingAutostart = document.getElementById('setting-autostart');
+
+  if (btnSettings && modalSettings) {
+    btnSettings.addEventListener('click', async () => {
+      if (window.electronAPI && window.electronAPI.getAutostartStatus) {
+        const isAutostart = await window.electronAPI.getAutostartStatus();
+        if (settingAutostart) settingAutostart.checked = Boolean(isAutostart);
+      }
+      modalSettings.classList.add('open');
+    });
+
+    if (modalSettingsClose) {
+      modalSettingsClose.addEventListener('click', () => modalSettings.classList.remove('open'));
+    }
+    if (modalSettingsDone) {
+      modalSettingsDone.addEventListener('click', () => modalSettings.classList.remove('open'));
+    }
+
+    if (settingAutostart) {
+      settingAutostart.addEventListener('change', async (e) => {
+        const enabled = e.target.checked;
+        if (window.electronAPI && window.electronAPI.setAutostartStatus) {
+          await window.electronAPI.setAutostartStatus(enabled);
+        }
+        if (window.Toast) {
+          window.Toast.show(enabled ? 'Noir will start with Windows' : 'Disabled start with Windows', 'info');
+        }
+      });
+    }
+  }
+
   // Re-draw spider cables on scroll or window resize
   spiderBoard.addEventListener('scroll', () => requestAnimationFrame(renderSpiderCables));
   window.addEventListener('resize', () => requestAnimationFrame(renderSpiderCables));

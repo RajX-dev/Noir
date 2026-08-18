@@ -22,13 +22,16 @@
       </div>
       
       <div class="titlebar-actions">
+        <button class="window-btn" id="btn-settings" title="Settings">
+          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </button>
         <button class="window-btn" id="btn-minimize" title="Minimize">
           <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </button>
         <button class="window-btn" id="btn-maximize" title="Maximize">
           <svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"></rect></svg>
         </button>
-        <button class="window-btn close-btn" id="btn-close" title="Close">
+        <button class="window-btn close-btn" id="btn-close" title="Close (Minimizes to Tray)">
           <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="6" y1="18" x2="18" y2="6"></line></svg>
         </button>
       </div>
@@ -111,6 +114,44 @@
         <div class="modal-actions">
           <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
           <button class="btn btn-primary" id="modal-save">Save Profile</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Settings Modal -->
+    <div class="modal-overlay" id="modal-settings">
+      <div class="modal-box">
+        <div class="modal-header">
+          <span class="modal-title">Noir System Settings</span>
+          <button class="modal-close-btn" id="modal-settings-close">✕</button>
+        </div>
+        <div class="settings-list">
+          <label class="settings-item">
+            <div class="settings-text">
+              <span class="settings-title">Start with Windows</span>
+              <span class="settings-desc">Launch Noir minimized to system tray on login</span>
+            </div>
+            <input type="checkbox" id="setting-autostart" class="settings-toggle">
+          </label>
+
+          <label class="settings-item">
+            <div class="settings-text">
+              <span class="settings-title">Close to System Tray</span>
+              <span class="settings-desc">Keep audio routing running in background when closed</span>
+            </div>
+            <input type="checkbox" id="setting-closetotray" class="settings-toggle" checked disabled>
+          </label>
+
+          <label class="settings-item">
+            <div class="settings-text">
+              <span class="settings-title">Auto-Apply Profile on Launch</span>
+              <span class="settings-desc">Restore your active preset automatically on startup</span>
+            </div>
+            <input type="checkbox" id="setting-autoapply" class="settings-toggle" checked disabled>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" id="modal-settings-done">Done</button>
         </div>
       </div>
     </div>

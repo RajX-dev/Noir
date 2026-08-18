@@ -2,15 +2,36 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const audioManager = require('./audio/audioManager');
 const deviceMonitor = require('./audio/deviceMonitor');
-
 const profileManager = require('./profiles/profileManager');
+const trayManager = require('./tray/trayManager');
+const WindowStateManager = require('./utils/windowState');
 
 let mainWindow = null;
+let isQuitting = false;
+const windowState = new WindowStateManager({ defaultWidth: 1080, defaultHeight: 720 });
+
+// Ensure single-instance lock
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (!mainWindow.isVisible()) mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
 
 function createWindow() {
+  const savedState = windowState.loadState();
+
   mainWindow = new BrowserWindow({
-    width: 1080,
-    height: 720,
+    width: savedState.width,
+    height: savedState.height,
+    x: savedState.x,
+    y: savedState.y,
     minWidth: 900,
     minHeight: 520,
     maxWidth: 1600,
@@ -29,11 +50,44 @@ function createWindow() {
     }
   });
 
+  windowState.track(mainWindow);
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
-  mainWindow.once('ready-to-show', () => {
+  mainWindow.once('ready-to-show', async () => {
     mainWindow.show();
     deviceMonitor.start(1500);
+
+    // Initialize System Tray
+    await trayManager.init({
+      mainWindow,
+      profileManager,
+      audioManager,
+      onQuit: () => {
+        isQuitting = true;
+        app.quit();
+      }
+    });
+
+    // Auto-apply active profile on startup
+    try {
+      const activeProfile = await profileManager.getActiveProfile();
+      if (activeProfile) {
+        await profileManager.applyProfile(activeProfile.id, audioManager);
+      }
+    } catch (err) {
+      console.error('[Noir] Auto-apply startup profile error:', err);
+    }
+  });
+
+  // Minimize to tray on close
+  mainWindow.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+      trayManager.notifyMinimized();
+      trayManager.updateMenu();
+      return false;
+    }
   });
 
   mainWindow.on('closed', () => {
@@ -58,7 +112,9 @@ ipcMain.handle('window-maximize', () => {
 });
 
 ipcMain.handle('window-close', () => {
-  if (mainWindow) mainWindow.close();
+  if (mainWindow) {
+    mainWindow.close(); // Triggers the close-to-tray listener
+  }
 });
 
 // Real Audio Engine IPC Handlers
@@ -87,13 +143,15 @@ ipcMain.handle('mute-session', async (event, { sessionId, isMuted }) => {
   return { success };
 });
 
-// Profile IPC Handlers (Phase 4 Persistent Profile Engine)
+// Profile IPC Handlers (Phase 4 & 5 Persistent Engine + Tray Sync)
 ipcMain.handle('get-profiles', async () => {
   return profileManager.getProfiles();
 });
 
 ipcMain.handle('apply-profile', async (event, profileId) => {
-  return profileManager.applyProfile(profileId, audioManager);
+  const res = await profileManager.applyProfile(profileId, audioManager);
+  await trayManager.updateMenu();
+  return res;
 });
 
 ipcMain.handle('save-profile', async (event, newProfile) => {
@@ -103,11 +161,28 @@ ipcMain.handle('save-profile', async (event, newProfile) => {
     icon: newProfile.icon,
     sessions
   });
+  await trayManager.updateMenu();
   return { success: true, profile: res.profile, profiles: res.profiles };
 });
 
 ipcMain.handle('delete-profile', async (event, profileId) => {
-  return profileManager.deleteProfile(profileId);
+  const res = await profileManager.deleteProfile(profileId);
+  await trayManager.updateMenu();
+  return res;
+});
+
+// System Settings IPC
+ipcMain.handle('get-autostart-status', () => {
+  return app.getLoginItemSettings().openAtLogin;
+});
+
+ipcMain.handle('set-autostart-status', (event, enabled) => {
+  app.setLoginItemSettings({
+    openAtLogin: enabled,
+    openAsHidden: true
+  });
+  trayManager.updateMenu();
+  return { success: true, enabled };
 });
 
 // Device and Session Change Notifications
@@ -130,12 +205,19 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
+    } else if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
     }
   });
 });
 
+app.on('before-quit', () => {
+  isQuitting = true;
+});
+
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' && isQuitting) {
     app.quit();
   }
 });
