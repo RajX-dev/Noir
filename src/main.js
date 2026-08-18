@@ -35,12 +35,12 @@ let mockProfiles = [
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 880,
-    height: 680,
-    minWidth: 720,
+    width: 1080,
+    height: 720,
+    minWidth: 900,
     minHeight: 520,
-    maxWidth: 1400,
-    maxHeight: 1000,
+    maxWidth: 1600,
+    maxHeight: 1080,
     frame: false,
     transparent: false,
     backgroundColor: '#0a0a0f',

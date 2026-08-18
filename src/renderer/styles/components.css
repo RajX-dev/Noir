@@ -477,7 +477,6 @@
   gap: var(--space-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
-  max-width: 210px;
 }
 
 .route-dropdown-btn:hover {
@@ -487,9 +486,6 @@
 
 .route-label {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 170px;
 }
 
 .route-arrow {
