@@ -43,6 +43,7 @@ function createWindow() {
     frame: false,
     transparent: false,
     backgroundColor: '#0a0a0f',
+    icon: path.join(__dirname, '..', 'assets', 'icon.png'),
     resizable: true,
     show: false,
     titleBarStyle: 'hidden',
